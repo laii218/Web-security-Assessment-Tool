@@ -4,288 +4,350 @@ from ScrapingTool import scraping
 from vulnerability_scanner import vulnerability_scanner
 from ParamSpiderTool import param_spider_tool
 from Password_Operations import password_operations
+from DirectoryScanner import directory_scanner
+from SubdomainFinder import subdomain_finder
+from adminpagesFinder import adminpagesFinder
+from TechnologyProfiler import technology_profiler
+from ScrapingWebsites import scraping_websites
+from JavaScriptIntelTool import javascript_intel_tool
+from HTTPProbeTool import http_probe_tool
+from PortScannerTool import port_scanner_tool
 import customtkinter
+from ui_utils import open_image
+from session_state import (
+    get_target,
+    set_target,
+    set_scope_from_text,
+    get_scope_text,
+    describe_scope,
+)
 
-# create the main window
+
 root = customtkinter.CTk()
-# set the appearance mode
 customtkinter.set_appearance_mode("dark")
-# set the default color theme
 customtkinter.set_default_color_theme("dark-blue")
-# set the title of the window
 root.title("Web Security Assessment Tool")
-# set the window size
-root.geometry("1000x500")
-# set the window to be not resizable
+root.geometry("1400x900")
+root.configure(fg_color="#050c18")
 root.resizable(True, True)
-# design the Main Window
-root.configure(fg_color="#1e88e5")
 
 
-# Open the image file
-img = Image.open("background1.jpg")
-
-# Resize the image to fit the window size
-img = img.resize((root.winfo_screenwidth(), root.winfo_screenheight()), Image.BICUBIC)
-
-# Create a PhotoImage object from the resized image
-bg_img = ImageTk.PhotoImage(img)
-
-# Create a Label widget with the image as background
-bg_label = customtkinter.CTkLabel(root, image=bg_img)
-bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-
-# the main label of the window this has the overall information about the tool
-about_the_tool=customtkinter.CTkLabel(root, text="Security Tool for web usage that contains multiple features for collecting data from websites,\n the features are :\n"
-                                "\n 1-) Web Scraping : also known as data scraping, is the process of automatically extracting data from websites.\n"
-                                "\n 2-) Parameter Spider : is a web parameters hunter , it searches for the parameters in the url .\n"
-                                "\n 3-) Vulnerability Scanner : is the process of using Random payloads into websites and check their response if a potential vulnerability exists or not  \n"
-                                "\n 4-) Password Operation: is  a Tool that helps with Password operations such as (password generator and hash cracker)\n"
-                                "\n you can find more information from the buttons above.\n"
-                                "\n remember to use this tool legally and in an ethical way. ")
-# place the label in the center of the window
-about_the_tool.configure(font=("Courier", 14), fg_color="#0B1320")
-about_the_tool.pack(fill="both", expand=True)
-about_the_tool.place(relx=0.5, rely=0.5, anchor=CENTER)
-
-# password operation button and the background image of it is placed
-background1 = Image.open("dark.png")
-background1 = background1.resize((15, 15), Image.BICUBIC)
-img_tk4 = customtkinter.CTkImage(background1)
-
-Password_Operation_Button = customtkinter.CTkButton(master=root, text="Password Operations",image=img_tk4, compound='left', command=password_operations, width=20, height=2)
-
-# scraping button and the background image of it is placed
-background2 = Image.open("dark.png")
-background2 = background2.resize((15, 15), Image.BICUBIC)
-img_tk2 = customtkinter.CTkImage(background2)
-
-Scraping_button = customtkinter.CTkButton(master=root, text="Scraping Tool",image=img_tk2,compound='left', command=scraping, width=20, height=2,)
-
-# param spider button and the background image of it is placed
-background5 = Image.open("dark.png")
-background5 = background5.resize((15, 15), Image.BICUBIC)
-img_tk6 = customtkinter.CTkImage(background5)
-
-ParamSpider_button = customtkinter.CTkButton(master=root, text="ParamSpider Tool",image=img_tk6, compound="left",  command=param_spider_tool, width=20, height=2)
-
-# crawling button and the background image of it is placed
-background6 = Image.open("dark.png")
-background6 = background6.resize((15, 15), Image.BICUBIC)
-img_tk7 = customtkinter.CTkImage(background6)
-
-Vulnerability_Scanner_button = customtkinter.CTkButton(master=root, text="Vuln Scanner", image=img_tk7, compound='left', command=vulnerability_scanner, width=20, height=2)
+def build_banner():
+    banner = customtkinter.CTkFrame(root, fg_color="#081224", corner_radius=0)
+    banner.pack(fill="x")
+    title = customtkinter.CTkLabel(
+        banner, text="Web Security Assessment HQ", font=("Segoe UI", 32, "bold")
+    )
+    title.pack(anchor="w", padx=35, pady=(30, 6))
+    subtitle = customtkinter.CTkLabel(
+        banner,
+        text=(
+            "Coordinate recon, scanning, exploitation triage, and hygiene checks from a single hub.\n"
+            "Define the scope once, then launch tuned tooling with consistent reporting and exports."
+        ),
+        font=("Segoe UI", 17),
+        justify="left",
+    )
+    subtitle.pack(anchor="w", padx=35, pady=(0, 25))
 
 
-# place the buttons in the window
+build_banner()
+
+
+# Global target and scope controls
+target_scope_frame = customtkinter.CTkFrame(root, fg_color="#0f1c2e", corner_radius=18)
+target_scope_frame.pack(fill="x", padx=30, pady=(20, 10))
+
+global_target_var = StringVar(value=get_target())
+
+
+def apply_global_target():
+    set_target(global_target_var.get())
+    target_status.configure(text=f"Target applied: {global_target_var.get() or 'None'}")
+
+
+target_label = customtkinter.CTkLabel(
+    target_scope_frame,
+    text="Global Target (https://example.com):",
+    font=("Segoe UI", 14, "bold"),
+)
+target_label.grid(row=0, column=0, padx=15, pady=(15, 5), sticky="w")
+target_entry = customtkinter.CTkEntry(target_scope_frame, width=420, textvariable=global_target_var)
+target_entry.grid(row=0, column=1, padx=10, pady=(15, 5), sticky="w")
+target_button = customtkinter.CTkButton(target_scope_frame, text="Apply Target", command=apply_global_target)
+target_button.grid(row=0, column=2, padx=10, pady=(15, 5))
+target_status = customtkinter.CTkLabel(target_scope_frame, text=f"Current: {get_target() or 'None'}")
+target_status.grid(row=0, column=3, padx=15, pady=(15, 5), sticky="e")
+
+scope_label = customtkinter.CTkLabel(
+    target_scope_frame,
+    text="Scope (one host/path per line, supports *.example.com):",
+    font=("Segoe UI", 14, "bold"),
+)
+scope_label.grid(row=1, column=0, padx=15, pady=(10, 5), sticky="nw")
+scope_box = customtkinter.CTkTextbox(target_scope_frame, width=420, height=110)
+scope_box.grid(row=1, column=1, padx=10, pady=(10, 15), sticky="w")
+scope_box.insert("1.0", get_scope_text())
+
+
+def apply_scope():
+    set_scope_from_text(scope_box.get("1.0", END))
+    scope_status.configure(text=describe_scope())
+
+
+scope_button = customtkinter.CTkButton(target_scope_frame, text="Save Scope", command=apply_scope)
+scope_button.grid(row=1, column=2, padx=10, pady=(10, 15))
+scope_status = customtkinter.CTkLabel(target_scope_frame, text=describe_scope())
+scope_status.grid(row=1, column=3, padx=15, pady=(10, 15), sticky="e")
+target_scope_frame.grid_columnconfigure(1, weight=1)
+
+
+# Operational guidance
+insights_frame = customtkinter.CTkFrame(root, fg_color="#0b1728", corner_radius=18)
+insights_frame.pack(fill="x", padx=30, pady=(0, 15))
+insights_label = customtkinter.CTkLabel(
+    insights_frame,
+    text=(
+        "Operational playbook:\n"
+        "• Capture a fingerprint per host before fuzzing with ParamSpider or the vuln scanner.\n"
+        "• Use rate controls generously to avoid bans on production targets.\n"
+        "• Export results frequently so scope evidence, timelines, and audit trails stay aligned."
+    ),
+    font=("Segoe UI", 14),
+    justify="left",
+)
+insights_label.pack(anchor="w", padx=25, pady=18)
+
+
+# Tool grid
+tools_frame = customtkinter.CTkScrollableFrame(root, fg_color="#050c18")
+tools_frame.pack(fill="both", expand=True, padx=30, pady=(0, 20))
+tools_frame.grid_columnconfigure((0, 1, 2), weight=1, uniform="tools")
+
+
+def build_tool_card(row, column, title, description, command):
+    card = customtkinter.CTkFrame(tools_frame, fg_color="#0f1c2e", corner_radius=16)
+    card.grid(row=row, column=column, padx=15, pady=15, sticky="nsew")
+    name = customtkinter.CTkLabel(card, text=title, font=("Segoe UI", 18, "bold"))
+    name.pack(anchor="w", padx=20, pady=(20, 10))
+    desc = customtkinter.CTkLabel(card, text=description, justify="left")
+    desc.pack(anchor="w", padx=20, pady=(0, 15))
+    launch = customtkinter.CTkButton(card, text="Launch", command=command, height=36)
+    launch.pack(padx=20, pady=(0, 20), anchor="w")
+
+
+tool_definitions = [
+    (
+        "Web Scraping",
+        "Harvest structured text, media, and metadata from static or dynamic pages.",
+        scraping,
+    ),
+    (
+        "ParamSpider",
+        "Enumerate URL parameters, pace requests, and auto-tag XSS/SQLi/open-redirect vectors.",
+        param_spider_tool,
+    ),
+    (
+        "Vulnerability Scanner",
+        "Replay payload lists, triage reflected output, and export scan notes per host.",
+        vulnerability_scanner,
+    ),
+    (
+        "Password Operations",
+        "Generate, mutate, and crack passwords or hashes with dedicated helpers.",
+        password_operations,
+    ),
+    (
+        "Directory Scanner",
+        "Bruteforce wordlists with adaptive delays to uncover hidden panels and APIs.",
+        directory_scanner,
+    ),
+    (
+        "Subdomain Finder",
+        "Passively enumerate crt.sh, Sonar, and AlienVault datasets for scoped hosts.",
+        subdomain_finder,
+    ),
+    (
+        "Admin Finder",
+        "Leverage mutable wordlists + Wayback URLs to lock onto admin dashboards.",
+        adminpagesFinder,
+    ),
+    (
+        "Technology Profiler",
+        "Fingerprint versions, missing security headers, and exposed files per host.",
+        technology_profiler,
+    ),
+    (
+        "Web Data Workflows",
+        "Scrape social/email/CVE intel from staged workflows with export support.",
+        scraping_websites,
+    ),
+    (
+        "JavaScript Intel",
+        "Pull script inventories, URLs, and secrets directly from in-scope assets.",
+        javascript_intel_tool,
+    ),
+    (
+        "HTTP Probe",
+        "Test domain lists for responsive HTTP/HTTPS stacks with rate controls.",
+        http_probe_tool,
+    ),
+    (
+        "Port Scanner",
+        "Fan-out SYN/connect scans with custom port sets and exports.",
+        port_scanner_tool,
+    ),
+]
+
+for idx, tool in enumerate(tool_definitions):
+    build_tool_card(idx // 3, idx % 3, *tool)
+
+
+# About windows reuse historic content
 def about_scraping_tool():
-    # create a new window
     scraping_window = customtkinter.CTkToplevel()
-    # set the appearance mode
     customtkinter.set_appearance_mode("dark")
-    # set the default color theme
     customtkinter.set_default_color_theme("dark-blue")
-    # set the title of the window
     scraping_window.title("About Web Scraping Tool")
-    # set the window size
-    scraping_window.geometry("1500x900")
-    # open the image file
-    background_image_for_about_scraping_tool = Image.open("background1.jpg")
-    # resize the image to fit the window size
-    background_image_for_about_scraping_tool = background_image_for_about_scraping_tool.resize((scraping_window.winfo_screenwidth(), scraping_window.winfo_screenheight()), Image.BICUBIC)
-    # create a PhotoImage object from the resized image
-    background_image_for_about_scraping_tool_object = ImageTk.PhotoImage(background_image_for_about_scraping_tool)
-    # create a Label widget with the image as background
-    background_image_for_about_scraping_tool_label = customtkinter.CTkLabel(scraping_window, image=background_image_for_about_scraping_tool_object)
-    # place the label in the center of the window
-    background_image_for_about_scraping_tool_label.place(x=0, y=0, relwidth=1, relheight=1)
-    # the label that contains the information about the scraping tool
-    about_scraping_label = customtkinter.CTkLabel(master=scraping_window, text="Web scraping, also known as data scraping, is the process of automatically extracting data from websites.\n This technique is used to collect large amounts of data \nfrom websites that would otherwise be time-consuming or difficult to extract manually."
-    
-                                                       "\n Web scraping can be done in various ways,\n including by using programming languages like Python \n or by using specialized tools like web scraping software.\n Here are some examples of web scraping:\n"
-                                                       "\n1-) Price comparison websites: Websites like Amazon or eBay\n are popular destinations for online shoppers,\n and web scraping is used to extract data on product prices, ratings, and reviews.\n This information is then used to create price comparison websites like PriceGrabber or Shopzilla.\n"
-                                                       "\n2-) Social media analytics: Social media platforms like Twitter or Facebook\n provide a wealth of data that can be used for social media analytics.\n Web scraping is used to extract data on user engagement, sentiment analysis,\n and other metrics that can be used for marketing purposes.\n"
-                                                       "\n Overall, web scraping is a powerful tool that can be used for a wide range of applications,\n from business intelligence to scientific research.\n However, it's important to use web scraping ethically and legally,\n respecting the terms of service of the websites you're scraping \n and following all applicable laws and regulations.")
-    # place the label in the center of the window
-    about_scraping_label.pack(fill="both", expand=True)
-    about_scraping_label.place(rely=0.5, relx=0.5, anchor=CENTER)
-    about_scraping_label.configure(font=("Courier", 16), fg_color="#0B1320")
-    # create a back button
-    back_button = customtkinter.CTkButton(master=scraping_window, text="Back", command=scraping_window.destroy)
-    back_button.pack()
-    back_button.place(relx=0.5, rely=0.9, anchor=CENTER)
-    back_button.configure(font=("Courier", 16), fg_color="#0B1320")
+    scraping_window.geometry("1100x800")
+    background_image = open_image("background1.jpg")
+    background_image = background_image.resize(
+        (scraping_window.winfo_screenwidth(), scraping_window.winfo_screenheight()),
+        Image.BICUBIC,
+    )
+    background_image = ImageTk.PhotoImage(background_image)
+    background_label = customtkinter.CTkLabel(scraping_window, image=background_image)
+    background_label.image = background_image
+    background_label.place(x=0, y=0, relwidth=1, relheight=1)
+    about_label = customtkinter.CTkLabel(
+        scraping_window,
+        text="Web scraping, also known as data scraping, is the process of automatically extracting data from websites.\n"
+        "This technique is used to collect large amounts of data from websites that would otherwise be time-consuming"
+        " or difficult to extract manually.\n\n"
+        "Web scraping can be done in various ways, including by using programming languages like Python or by"
+        " using specialized tools like web scraping software.\nHere are some examples:\n"
+        "1-) Price comparison websites aggregate prices, ratings, and reviews before presenting them side-by-side.\n"
+        "2-) Social media analytics platforms extract engagement, sentiment, and other metrics for marketing.\n\n"
+        "Always scrape ethically, respecting site terms and applicable laws.",
+        font=("Courier", 16),
+        fg_color="#0B1320",
+    )
+    about_label.pack(fill="both", expand=True)
+    about_label.place(relx=0.5, rely=0.5, anchor=CENTER)
+    back_button = customtkinter.CTkButton(scraping_window, text="Back", command=scraping_window.destroy)
+    back_button.place(relx=0.5, rely=0.92, anchor=CENTER)
 
 
-# place the background image of the button
-image1 = Image.open("owasp.jpg")
-image1 = image1.resize((15, 15), Image.BICUBIC)
-img_tk1 = customtkinter.CTkImage(image1)
-
-about_scraping = customtkinter.CTkButton(master=root, text="about Scraping Tool", image=img_tk1, compound='left', command=about_scraping_tool, width=50, height=10)
-about_scraping.pack()
-about_scraping.place(relx=0.39, rely=0.1, anchor=CENTER)
-about_scraping.configure(font=("Courier", 14), fg_color="#0B1320")
-
-
-# place the buttons in the window
 def about_params_spider():
-    # create a new window
     param_window = customtkinter.CTkToplevel()
-    # set the appearance mode
     customtkinter.set_appearance_mode("dark")
-    # set the default color theme
     customtkinter.set_default_color_theme("dark-blue")
-    # set the title of the window
     param_window.title("About ParamSpider Tool")
-    # set the window size
-    param_window.geometry("1500x900")
-    # open the image file
-    background_image_for_about_paramspider_tool = Image.open("background1.jpg")
-    # resize the image to fit the window size
-    background_image_for_about_paramspider_tool = background_image_for_about_paramspider_tool.resize((param_window.winfo_screenwidth(), param_window.winfo_screenheight()), Image.BICUBIC)
-    # create a PhotoImage object from the resized image
-    background_image_for_about_paramspider_tool_object = ImageTk.PhotoImage(background_image_for_about_paramspider_tool)
-    # create a Label widget with the image as background
-    background_image_for_about_paramspider_tool_label = customtkinter.CTkLabel(param_window, image=background_image_for_about_paramspider_tool_object)
-    # place the label in the center of the window
-    background_image_for_about_paramspider_tool_label.place(x=0, y=0, relwidth=1, relheight=1)
-    # the label that contains the information about the paramspider tool
-    about_param_spider_tool = customtkinter.CTkLabel(param_window, text="Parameter Spider is a web application scanner tool that helps in identifying vulnerabilities and security issues in web applications.\n It works by scanning a website for various parameters and then testing them for vulnerabilities."
-                                                       "\n Here are some examples of how Parameter Spider tool works:\n"
-                                                       "\n 1-) SQL Injection: Parameter Spider tool can identify SQL injection vulnerabilities in a web application\n by sending malicious SQL queries through input fields or parameter\n If the application is vulnerable, it will return sensitive information, such as usernames and passwords.\n"
-                                                       "\n 2-) Cross-site scripting (XSS):Parameter Spider tool can identify cross-site scripting vulnerabilities in a web application\n by injecting malicious scripts through input fields or parameters.\nIf the application is vulnerable,\nit will execute the malicious script and allow the attacker to steal user data or hijack user sessions.\n"
-                                                       "\n Overall, Parameter Spider tool is a powerful tool for identifying vulnerabilities in web applications.\n However, it's important to use it ethically and legally,\n respecting the terms of service of the websites you're scanning\n and following all applicable laws and regulations.\n It's also important to perform thorough testing and validation\n of any vulnerabilities identified by the tool before reporting\n them to the website owner or security team.",pady=5,padx=5)
-# place the label in the center of the window
-    about_param_spider_tool.pack(fill="both", expand=True)
-    about_param_spider_tool.place(relx=0.5, rely=0.5, anchor=CENTER)
-    about_param_spider_tool.configure(font=("Courier", 16), fg_color="#0B1320")
-    # create a back button
-    back_button = customtkinter.CTkButton(master=param_window, text="Back", command=param_window.destroy)
-    back_button.pack()
-    back_button.place(relx=0.5, rely=0.9, anchor=CENTER)
-    back_button.configure(font=("Courier", 16), fg_color="#0B1320")
+    param_window.geometry("1100x800")
+    background_image = open_image("background1.jpg")
+    background_image = background_image.resize(
+        (param_window.winfo_screenwidth(), param_window.winfo_screenheight()),
+        Image.BICUBIC,
+    )
+    background_image = ImageTk.PhotoImage(background_image)
+    background_label = customtkinter.CTkLabel(param_window, image=background_image)
+    background_label.image = background_image
+    background_label.place(x=0, y=0, relwidth=1, relheight=1)
+    about_label = customtkinter.CTkLabel(
+        param_window,
+        text="Parameter Spider hunts parameters and injects payloads to highlight risky behaviors.\n"
+        "Examples:\n"
+        "1-) SQL Injection: send crafted SQL through input fields and query strings to surface raw DB errors.\n"
+        "2-) XSS: inject scripts through parameters to identify reflected or stored vector points.\n\n"
+        "Use findings responsibly and validate proofs before reporting.",
+        font=("Courier", 16),
+        fg_color="#0B1320",
+    )
+    about_label.pack(fill="both", expand=True)
+    about_label.place(relx=0.5, rely=0.5, anchor=CENTER)
+    back_button = customtkinter.CTkButton(param_window, text="Back", command=param_window.destroy)
+    back_button.place(relx=0.5, rely=0.92, anchor=CENTER)
 
 
-# place the buttons in the window
-background = Image.open("owasp.jpg")
-background = background.resize((15, 15), Image.BICUBIC)
-img_tk3 = customtkinter.CTkImage(background)
-
-# place the about_param_spider button in the window
-about_ParamSpider = customtkinter.CTkButton(master=root, text="about ParamSpider Tool", image=img_tk3, compound='left', command=about_params_spider, width=30, height=10)
-about_ParamSpider.pack()
-about_ParamSpider.place(relx=0.63, rely=0.1, anchor=CENTER)
-about_ParamSpider.configure(font=("Courier", 14), fg_color="#0B1320")
-
-
-# place the buttons in the window
-def about_Vulnerability_Scanner_Tool():
-    # create a new window
-    Scanner_window = customtkinter.CTkToplevel()
-    # set the appearance mode
+def about_vulnerability_scanner():
+    scanner_window = customtkinter.CTkToplevel()
     customtkinter.set_appearance_mode("dark")
-    # set the default color theme
     customtkinter.set_default_color_theme("dark-blue")
-    # set the title of the window
-    Scanner_window.title("About Web Crawling Tool")
-    # set the window size
-    Scanner_window.geometry("1500x1000")
-    # open the image file
-    background_image_for_about_vulnerability_scanner_tool = Image.open("background1.jpg")
-    # resize the image to fit the window size
-    background_image_for_about_vulnerability_scanner_tool = background_image_for_about_vulnerability_scanner_tool.resize((Scanner_window.winfo_screenwidth(), Scanner_window.winfo_screenheight()), Image.BICUBIC)
-    # create a PhotoImage object from the resized image
-    background_image_for_about_vulnerability_scanner_tool = ImageTk.PhotoImage(background_image_for_about_vulnerability_scanner_tool)
-    # create a Label widget with the image as background
-    background_image_for_about_vulnerability_scanner_tool = customtkinter.CTkLabel(Scanner_window, image=background_image_for_about_vulnerability_scanner_tool)
-    # place the label in the center of the window
-    background_image_for_about_vulnerability_scanner_tool.place(x=0, y=0, relwidth=1, relheight=1)
-    # the label that contains the information about the vulnerability scanner tool
-    about_web_crawling_tool=customtkinter.CTkLabel(Scanner_window, text="Vulnerability scanner tools are designed to identify and assess security vulnerabilities in software applications, networks, or systems.\n Two common types of vulnerabilities that are often targeted are SQL injection and cross-site scripting (XSS).\n Here's an overview of each vulnerability and their corresponding scanner tools:\n"
-                                                                         "\n 1-) SQL Injection: SQL injection is a type of attack that allows an attacker to execute malicious SQL statements against a database.\n This can result in the attacker gaining access to sensitive information or modifying data in the database.\n SQL injection vulnerabilities can be identified using tools such as SQLMap and SQLNinja.\n"
-                                                                         "\n 2-) Cross-site scripting (XSS): Cross-site scripting (XSS) is a type of attack\n that allows an attacker to inject malicious scripts into a website.\n These scripts can then be executed by other users who visit the website,\n allowing the attacker to steal user data or hijack user sessions.\n XSS vulnerabilities can be identified using tools such as XSSer and XSStrike.\n")
-# place the label in the center of the window
-    about_web_crawling_tool.pack(fill="both", expand=True)
-    about_web_crawling_tool.place(relx=0.5, rely=0.5, anchor=CENTER)
-    about_web_crawling_tool.configure(font=("Courier", 16), fg_color="#0B1320")
-    # create a back button
-    back_button = customtkinter.CTkButton(master=Scanner_window, text="Back", command=Scanner_window.destroy)
-    back_button.pack()
-    back_button.place(relx=0.5, rely=0.9, anchor=CENTER)
-    back_button.configure(font=("Courier", 16), fg_color="#0B1320")
+    scanner_window.title("About Vulnerability Scanner")
+    scanner_window.geometry("1100x850")
+    background_image = open_image("background1.jpg")
+    background_image = background_image.resize(
+        (scanner_window.winfo_screenwidth(), scanner_window.winfo_screenheight()),
+        Image.BICUBIC,
+    )
+    background_image = ImageTk.PhotoImage(background_image)
+    background_label = customtkinter.CTkLabel(scanner_window, image=background_image)
+    background_label.image = background_image
+    background_label.place(x=0, y=0, relwidth=1, relheight=1)
+    about_label = customtkinter.CTkLabel(
+        scanner_window,
+        text="Vulnerability scanners replay payloads to identify SQL injection, XSS, and related flaws.\n"
+        "SQL injection attacks force databases to run attacker-controlled queries.\n"
+        "XSS attacks inject scripts that run in other users' browsers, stealing data or hijacking sessions.\n\n"
+        "Combine automated detection with manual validation before sharing findings with stakeholders.",
+        font=("Courier", 16),
+        fg_color="#0B1320",
+    )
+    about_label.pack(fill="both", expand=True)
+    about_label.place(relx=0.5, rely=0.5, anchor=CENTER)
+    back_button = customtkinter.CTkButton(scanner_window, text="Back", command=scanner_window.destroy)
+    back_button.place(relx=0.5, rely=0.92, anchor=CENTER)
 
 
-# place the buttons in the window
-background3 = Image.open("owasp.jpg")
-background3 = background3.resize((15, 15), Image.BICUBIC)
-img_tk4 = customtkinter.CTkImage(background3)
-
-about_Vuln_Scanner = customtkinter.CTkButton(master=root, text="about Vuln Scanner Tool", image=img_tk4, compound='left', command=about_Vulnerability_Scanner_Tool, width=30, height=10)
-about_Vuln_Scanner.pack()
-about_Vuln_Scanner.place(relx=0.88, rely=0.1, anchor=CENTER)
-about_Vuln_Scanner.configure(font=("Courier", 14), fg_color="#0B1320")
-
-
-# place the buttons in the window
 def about_password_operations():
-    # create a new window
     password_window = customtkinter.CTkToplevel()
-    # set the appearance mode
     customtkinter.set_appearance_mode("dark")
-    # set the default color theme
     customtkinter.set_default_color_theme("dark-blue")
-    # set the title of the window
-    password_window.title("About Password Operations Tool")
-    # set the window size
-    password_window.geometry("1500x1000")
-    # open the image file
-    background_image_for_about_password_operations_tool = Image.open("background1.jpg")
-    # resize the image to fit the window size
-    background_image_for_about_password_operations_tool = background_image_for_about_password_operations_tool.resize((password_window.winfo_screenwidth(), password_window.winfo_screenheight()), Image.BICUBIC)
-    # create a PhotoImage object from the resized image
-    background_image_for_about_password_operations_tool_object = ImageTk.PhotoImage(background_image_for_about_password_operations_tool)
-    # create a Label widget with the image as background
-    background_image_for_about_password_operations_tool_label = customtkinter.CTkLabel(password_window, image=background_image_for_about_password_operations_tool_object)
-    # place the label in the center of the window
-    background_image_for_about_password_operations_tool_label.place(x=0, y=0, relwidth=1, relheight=1)
-    # the label that contains the information about the password operations tool
-    about_password_tool_label = customtkinter.CTkLabel(password_window, text="this Tool is made to help with Password Operations the features that this Tool include is :\n"
-                                                            "\n Hashes Cracker : is a program that tries to find the original plaintext of a hashed message or password.\n Hashing is a one-way process of encoding data \n in such a way that it becomes almost impossible to recover the original data.\n A hash cracker tool can be used to test the strength of a password\n by attempting to crack the hashed password. It uses brute force\n"
-                                                            "\n Password Generator : A password generator tool is a software program or application\n that creates complex and secure passwords automatically.\n It allows users to choose different parameters for the password, such as:\n length, character types, and more,\n to generate a strong and unique password that is difficult to guess.")
-# place the label in the center of the window
-    about_password_tool_label.pack(fill="both", expand=True)
-    about_password_tool_label.place(relx=0.5, rely=0.5, anchor=CENTER)
-    about_password_tool_label.configure(font=("Courier", 18), fg_color="#0B1320")
-    # create a back button
-    back_button = customtkinter.CTkButton(master=password_window, text="Back", command=password_window.destroy)
-    back_button.pack()
-    back_button.place(relx=0.5, rely=0.9, anchor=CENTER)
-    back_button.configure(font=("Courier", 16), fg_color="#0B1320")
+    password_window.title("About Password Operations")
+    password_window.geometry("1100x850")
+    background_image = open_image("background1.jpg")
+    background_image = background_image.resize(
+        (password_window.winfo_screenwidth(), password_window.winfo_screenheight()),
+        Image.BICUBIC,
+    )
+    background_image = ImageTk.PhotoImage(background_image)
+    background_label = customtkinter.CTkLabel(password_window, image=background_image)
+    background_label.image = background_image
+    background_label.place(x=0, y=0, relwidth=1, relheight=1)
+    about_label = customtkinter.CTkLabel(
+        password_window,
+        text="Password Operations bundles generators and hash crackers.\n"
+        "• Hash crackers brute-force original plaintext from hashed values to test password resilience.\n"
+        "• Generators create long, unique credentials with selectable character sets.\n\n"
+        "These helpers streamline credential hygiene during engagements.",
+        font=("Courier", 16),
+        fg_color="#0B1320",
+    )
+    about_label.pack(fill="both", expand=True)
+    about_label.place(relx=0.5, rely=0.5, anchor=CENTER)
+    back_button = customtkinter.CTkButton(password_window, text="Back", command=password_window.destroy)
+    back_button.place(relx=0.5, rely=0.92, anchor=CENTER)
 
 
-# place the background image of the button
-background4 = Image.open("owasp.jpg")
-background4 = background4.resize((15, 15), Image.BICUBIC)
-img_tk5 = customtkinter.CTkImage(background4)
+learn_more_frame = customtkinter.CTkFrame(root, fg_color="#0f1c2e", corner_radius=18)
+learn_more_frame.pack(fill="x", padx=30, pady=(0, 25))
+learn_more_label = customtkinter.CTkLabel(
+    learn_more_frame,
+    text="Need more context?",
+    font=("Segoe UI", 16, "bold"),
+)
+learn_more_label.grid(row=0, column=0, padx=20, pady=15, sticky="w")
 
-# place the about_password_button in the window
-about_Password_button = customtkinter.CTkButton(master=root, text="About Password Tool", image=img_tk5, compound='left', command=about_password_operations, width=30, height=10)
-about_Password_button.pack()
-about_Password_button.place(relx=0.13, rely=0.1, anchor=CENTER)
-about_Password_button.configure(font=("Courier", 14), fg_color="#0B1320")
+about_buttons = [
+    ("About Scraping", about_scraping_tool),
+    ("About ParamSpider", about_params_spider),
+    ("About Vuln Scanner", about_vulnerability_scanner),
+    ("About Password Ops", about_password_operations),
+]
 
-# place the buttons in the window
-Password_Operation_Button.pack(side="left", anchor=NW, fill="x", expand=True)
+for idx, (label, command) in enumerate(about_buttons, start=1):
+    btn = customtkinter.CTkButton(learn_more_frame, text=label, command=command)
+    btn.grid(row=0, column=idx, padx=10, pady=15)
 
-# place the buttons in the window
-Scraping_button.pack(side="left", anchor=NW, fill="x", expand=True)
 
-# place the buttons in the window
-ParamSpider_button.pack(side="left", anchor=NW, fill="x", expand=True)
-
-# place the buttons in the window
-Vulnerability_Scanner_button.pack(side="left", anchor=NW, fill="x", expand=True)
-
-# starting the main loop
 root.mainloop()
