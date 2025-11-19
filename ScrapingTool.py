@@ -6,6 +6,7 @@ from adminpagesFinder import admin_finder
 from vulnerabilitySearch import new_window
 from ScrapingWebsites import scraping_tool
 import customtkinter as ctk
+from ui_utils import open_image
 
 
 def scraping():
@@ -21,7 +22,7 @@ def scraping():
     second_window.title("Scraping Tool")
 
     # Open the image file
-    img = Image.open("dark.png")
+    img = open_image("dark.png")
 
     # Resize the image to fit the window size
     img = img.resize((second_window.winfo_screenwidth(), second_window.winfo_screenheight()), Image.ANTIALIAS)
@@ -39,7 +40,7 @@ def scraping():
         # destroy the window
         second_window.destroy()
     # create the image button
-    background13 = Image.open("dark.png")
+    background13 = open_image("dark.png")
     # Resize the image to fit the window size
     background13 = background13.resize((15, 15), Image.BICUBIC)
     # Create a PhotoImage object from the resized image
@@ -51,7 +52,7 @@ def scraping():
     # place the button in the center of the window
     back_button.place(relx=0.1, rely=0)
     # set the button font
-    background12 = Image.open("dark.png")
+    background12 = open_image("dark.png")
     # Resize the image to fit the window size
     background10 = background12.resize((15, 15), Image.BICUBIC)
     # Create a PhotoImage object from the resized image
@@ -75,7 +76,7 @@ def scraping():
     # set the label font
     legal_warning_label.configure(font=("Courier", 20))
     # set the image for the button
-    background11 = Image.open("dark.png")
+    background11 = open_image("dark.png")
     # Resize the image to fit the window size
     background11 = background11.resize((15, 15), Image.BICUBIC)
     # Create a PhotoImage object from the resized image
@@ -86,7 +87,7 @@ def scraping():
     start.pack()
     # place the button in the center of the window
     start.place(relx=0.5, rely=0)
-    background10 = Image.open("dark.png")
+    background10 = open_image("dark.png")
     # Resize the image to fit the window size
     background10 = background10.resize((15, 15), Image.BICUBIC)
     # Create a PhotoImage object from the resized image

@@ -6,8 +6,16 @@ from PIL import Image, ImageTk
 from bs4 import BeautifulSoup
 import tkinter as tk
 import threading
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import customtkinter
+from ui_utils import open_image
+from session_state import (
+    get_target,
+    set_target,
+    is_url_in_scope,
+    scope_error,
+    describe_scope,
+)
 
 def scraping_tool():
     # Create a window
@@ -21,7 +29,7 @@ def scraping_tool():
     # set the title of the window
     root.title('Web Scraper')
     # Create a background image
-    bckgrnd_img1 = Image.open('background1.jpg')
+    bckgrnd_img1 = open_image('background1.jpg')
     # resize the image to fit the window size
     bckgrnd_img1 = bckgrnd_img1.resize((root.winfo_screenwidth(), root.winfo_screenheight()), Image.BICUBIC)
     # convert the image to a TkPhoto object
@@ -43,6 +51,22 @@ def scraping_tool():
     url_entry = customtkinter.CTkEntry(url_entry_frame)
     # place the entry field in the frame
     url_entry.pack(side=customtkinter.LEFT)
+    if get_target():
+        url_entry.insert(0, get_target())
+
+    def load_global_target():
+        target = get_target()
+        if not target:
+            messagebox.showinfo('Global Target', 'No global target configured.')
+            return
+        url_entry.delete(0, tk.END)
+        url_entry.insert(0, target)
+
+    sync_button = customtkinter.CTkButton(url_entry_frame, text='Use Global Target', command=load_global_target)
+    sync_button.pack(side=customtkinter.LEFT, padx=5)
+
+    scope_label = customtkinter.CTkLabel(root, text=describe_scope())
+    scope_label.place(relx=0.5, rely=0.25, anchor=customtkinter.CENTER)
     # create the button
     # Create the checkboxes for selection
     checkboxes_frame = customtkinter.CTkFrame(root)
@@ -98,6 +122,13 @@ def scraping_tool():
         url = url_entry.get()
         processing_label.configure(text="Processing... Please wait")
 
+        if not is_url_in_scope(url):
+            messagebox.showerror('Scope Restriction', scope_error(url))
+            processing_label.configure(text="")
+            return
+        set_target(url)
+        scope_label.configure(text=describe_scope())
+
         # Get the selected options
         selected_options = []
         if links_checkbox_var.get():
@@ -105,7 +136,7 @@ def scraping_tool():
         if images_checkbox_var.get():
             selected_options.append('images')
         if social_media_checkbox_var.get():
-            selected_options.append('emails')
+            selected_options.append('social_media')
 
         if not selected_options:  # No checkboxes selected
             output_label.configure(text='Please select at least one checkbox.')
@@ -142,15 +173,17 @@ def scraping_tool():
             soup = BeautifulSoup(response.text, 'html.parser')
         except requests.exceptions.RequestException as e:
             output_label.configure(text=f'Error: {e}')
+            processing_label.configure(text="")
             return
 
         # Extract data from the website based on user selection
         output_text = ''
+        link_tags = []
         for option in selected_options:
             if option == 'links':
-                data = soup.find_all('a')
+                link_tags = soup.find_all('a')
                 output_text += 'Links:\n'
-                for link in data:
+                for link in link_tags:
                     href = link.get('href')
                     if href:
                         full_url = urllib.parse.urljoin(url, href)
@@ -195,16 +228,19 @@ def scraping_tool():
         output_box.insert(tk.END, output_text)
 
         # Make the links clickable
-        for link in data:
-            href = link.get('href')
-            if href:
-                full_url = urllib.parse.urljoin(url, href)
-                output_box.insert(tk.END, full_url + '\n')
-                start_index = output_box.search(href, '1.0', tk.END)
-                end_index = f'{start_index}+{len(href)}c'
-                output_box.tag_add(url, start_index, end_index)
-                output_box.tag_config(url, foreground='white', underline=True)
-                output_box.tag_bind(url, '<Button-1>', lambda event, href=href: open_link(href))
+        if link_tags:
+            for link in link_tags:
+                href = link.get('href')
+                if href:
+                    full_url = urllib.parse.urljoin(url, href)
+                    output_box.insert(tk.END, full_url + '\n')
+                    start_index = output_box.search(full_url, '1.0', tk.END)
+                    if start_index:
+                        end_index = f'{start_index}+{len(full_url)}c'
+                        tag_name = f"link_{start_index}"
+                        output_box.tag_add(tag_name, start_index, end_index)
+                        output_box.tag_config(tag_name, foreground='white', underline=True)
+                        output_box.tag_bind(tag_name, '<Button-1>', lambda event, href=full_url: open_link(href))
 
         # Save the output to a file
         save_button = customtkinter.CTkButton(output_window, text='Save', command=lambda: save_file(output_text))
